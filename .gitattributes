@@ -1,0 +1,2 @@
+# Keep source files consistent with rustfmt across platforms.
+* text=auto eol=lf

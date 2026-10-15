@@ -1,0 +1,28 @@
+[package]
+name = "vig"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+ui-verify = ["gpui-kit/test-support"]
+
+[dependencies]
+qwen3_asr = { git = "https://github.com/lumosimmo/qwen3-asr-rs", rev = "7984967e8701cc90bb17d06453901036e36ca578", default-features = false, features = ["forced-aligner"] }
+candle-core = "0.9"
+sherpa-rs = { version = "=0.6.8", default-features = false, features = ["download-binaries", "sys"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["rt", "time"] }
+sha2 = "0.10"
+sha1 = "0.10"
+fs2 = "0.4"
+gpui-kit = "=0.7.1"
+rfd = "0.17.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg"] }
+smallvec = "1"
+tempfile = "3"
+rodio = { version = "0.21.1", default-features = false, features = ["playback", "symphonia-isomp4", "symphonia-aac"] }
+
+[build-dependencies]
+cc = "1"

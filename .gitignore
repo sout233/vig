@@ -1,0 +1,15 @@
+/target/
+/dist/
+
+# Local editor and agent tooling
+/.agents/
+/.idea/
+/.vscode/
+
+# Local credentials and configuration
+/.env
+/.env.*
+!/.env.example
+
+# Rustfmt backups
+*.rs.bk
