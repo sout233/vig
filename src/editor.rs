@@ -769,12 +769,14 @@ impl Editor {
             if !window.is_window_active() {
                 self.finish_number(window, cx);
             } else {
-                self.move_number(crate::pointer_drag::shift_down(), window, cx);
-                if !crate::pointer_drag::left_button_down() {
-                    self.finish_number(window, cx);
-                } else {
-                    self.refresh_number_preview(cx);
+                #[cfg(windows)]
+                {
+                    self.move_number(crate::pointer_drag::shift_down(), window, cx);
+                    if !crate::pointer_drag::left_button_down() {
+                        self.finish_number(window, cx);
+                    }
                 }
+                self.refresh_number_preview(cx);
             }
         }
         let mut events = Vec::new();

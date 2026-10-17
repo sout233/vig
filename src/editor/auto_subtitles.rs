@@ -246,7 +246,7 @@ impl Render for AutoSubtitles {
                         div()
                             .text_sm()
                             .text_color(cx.theme().muted_foreground)
-                            .child("自动下载到 %LOCALAPPDATA%\\Vig\\models"),
+                            .child("自动下载到当前用户的 Vig 应用数据目录 / models"),
                     ),
             )
             .child(

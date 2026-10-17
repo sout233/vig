@@ -4,6 +4,7 @@ mod editor;
 mod media;
 mod model;
 mod motion;
+mod platform_paths;
 mod pointer_drag;
 mod theme;
 mod track_order;

@@ -22,10 +22,14 @@ serde_json = "1"
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg"] }
 smallvec = "1"
 tempfile = "3"
+dirs = "6"
 rodio = { version = "0.21.1", default-features = false, features = ["playback", "symphonia-isomp4", "symphonia-aac"] }
 
 [target.'cfg(windows)'.dependencies]
 raw-window-handle = "0.6"
+
+[target.'cfg(not(windows))'.dependencies]
+zed-font-kit = "=0.14.1-zed"
 
 [build-dependencies]
 cc = "1"

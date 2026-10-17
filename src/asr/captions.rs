@@ -15,8 +15,7 @@ pub fn insert_captions(project: &Project, captions: &[Caption]) -> Result<(Proje
     let mut next = project.clone();
     let track = next.add_track(TrackKind::Video);
     next.reorder_track(track, 0);
-    let font = std::path::PathBuf::from(std::env::var_os("WINDIR").ok_or("无法确定字幕字体目录")?)
-        .join("Fonts/msyh.ttc");
+    let font = crate::platform_paths::subtitle_font()?;
     let (width, height) = next.settings().dimensions();
     for caption in captions {
         if !caption.start.is_finite()

@@ -43,10 +43,7 @@ impl Preferences {
     }
 
     fn path() -> Result<PathBuf, String> {
-        Ok(
-            PathBuf::from(std::env::var_os("LOCALAPPDATA").ok_or("无法确定模型设置目录")?)
-                .join("Vig/asr.json"),
-        )
+        Ok(crate::platform_paths::data_directory()?.join("asr.json"))
     }
 
     pub fn load() -> Result<Self, String> {

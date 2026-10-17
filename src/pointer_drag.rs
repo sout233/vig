@@ -107,25 +107,27 @@ mod native {
 pub use native::{RelativePointer, left_button_down, shift_down};
 
 #[cfg(not(windows))]
-pub struct RelativePointer;
+pub struct RelativePointer {
+    position: f32,
+    consumed: f32,
+}
 
 #[cfg(not(windows))]
 impl RelativePointer {
-    pub fn begin(_: (f32, f32), _: (f32, f32), _: f32) -> Result<Self, String> {
-        Err("当前平台尚未实现数字的无限拖动".into())
+    pub fn begin(position: (f32, f32), _: (f32, f32), _: f32) -> Result<Self, String> {
+        Ok(Self {
+            position: position.0,
+            consumed: position.0,
+        })
+    }
+
+    pub fn update_position(&mut self, position: f32) {
+        self.position = position;
     }
 
     pub fn delta(&mut self) -> Result<f32, String> {
-        Err("当前平台尚未实现数字的无限拖动".into())
+        let delta = self.position - self.consumed;
+        self.consumed = self.position;
+        Ok(delta)
     }
-}
-
-#[cfg(not(windows))]
-pub fn left_button_down() -> bool {
-    false
-}
-
-#[cfg(not(windows))]
-pub fn shift_down() -> bool {
-    false
 }

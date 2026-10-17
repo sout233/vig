@@ -137,10 +137,7 @@ async fn request<T>(
 }
 
 pub fn directory() -> Result<PathBuf, String> {
-    Ok(
-        PathBuf::from(std::env::var_os("LOCALAPPDATA").ok_or("无法确定模型下载目录")?)
-            .join("Vig/models"),
-    )
+    Ok(crate::platform_paths::data_directory()?.join("models"))
 }
 
 pub fn download(

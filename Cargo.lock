@@ -9463,6 +9463,7 @@ version = "0.1.0"
 dependencies = [
  "candle-core",
  "cc",
+ "dirs 6.0.0",
  "fs2",
  "gpui-kit",
  "image",
@@ -9479,6 +9480,7 @@ dependencies = [
  "smallvec",
  "tempfile",
  "tokio",
+ "zed-font-kit",
 ]
 
 [[package]]

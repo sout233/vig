@@ -43,8 +43,7 @@ mod tests {
 
     #[test]
     fn old_captions_migrate_to_regular_video_events_with_their_position() {
-        let windows = std::env::var_os("WINDIR").unwrap();
-        let font = PathBuf::from(windows).join("Fonts/msyh.ttc");
+        let font = crate::platform_paths::subtitle_font().unwrap();
         let old = serde_json::json!({
             "version": 6, "name": "旧项目", "media": [],
             "tracks": [{"id": 1, "kind": "Video", "clips": []}],
@@ -88,10 +87,9 @@ impl TextGenerator {
 
 impl Project {
     pub fn add_subtitle(&mut self, start: f64) -> Result<u64, String> {
-        let windows = std::env::var_os("WINDIR").ok_or("无法确定 Windows 字体目录")?;
         let generator = TextGenerator {
             text: "请输入字幕".into(),
-            font_file: PathBuf::from(windows).join("Fonts/msyh.ttc"),
+            font_file: crate::platform_paths::subtitle_font()?,
             font_size: 48.,
             color: "FFFFFF".into(),
         };
