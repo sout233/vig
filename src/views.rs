@@ -381,18 +381,18 @@ impl Editor {
                 )
                 .children(
                     [
-                        "时间线起点 / 秒",
-                        "源入点 / 秒",
-                        "源出点 / 秒",
-                        "速度 / 0.25–4 倍",
-                        "音量 / 0–200%",
-                        "淡入 / 秒",
-                        "淡出 / 秒",
+                        ("时间线起点", "秒", None),
+                        ("源入点", "秒", None),
+                        ("源出点", "秒", None),
+                        ("速度", "倍", Some("速度范围：0.25–4 倍")),
+                        ("音量", "%", Some("音量范围：0–200%")),
+                        ("淡入", "秒", None),
+                        ("淡出", "秒", None),
                     ]
                     .iter()
                     .enumerate()
                     .filter(|(i, _)| *i != 4 || audio)
-                    .map(|(i, label)| {
+                    .map(|(i, (label, unit, hint))| {
                         div()
                             .flex()
                             .items_center()
@@ -400,11 +400,22 @@ impl Editor {
                             .gap_2()
                             .child(div().text_xs().child(*label))
                             .child(
-                                div().w(px(87.)).child(
-                                    Input::new(&self.fields[i])
-                                        .input_material()
-                                        .disabled(self.busy || self.job == Some(Job::Export)),
-                                ),
+                                div()
+                                    .id(("clip-property-input", i))
+                                    .w(px(112.))
+                                    .flex_shrink_0()
+                                    .child(
+                                        Input::new(&self.fields[i])
+                                            .input_material()
+                                            .suffix(div().text_xs().child(*unit))
+                                            .disabled(self.busy || self.job == Some(Job::Export)),
+                                    )
+                                    .when_some(*hint, |input, hint| {
+                                        input.tooltip(move |window, cx| {
+                                            gpui_kit::component::tooltip::Tooltip::new(hint)
+                                                .build(window, cx)
+                                        })
+                                    }),
                             )
                     }),
                 )

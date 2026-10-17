@@ -61,10 +61,19 @@ impl Editor {
     fn property_number(&self, index: usize, label: &str, cx: &mut Context<Self>) -> AnyElement {
         let locked = self.busy || self.job == Some(Job::Export);
         let value = self.property_values(self.selected.unwrap())[index];
+        let unit = match index {
+            0 | 1 => "秒",
+            3 | 4 | 5 | 7 => "%",
+            6 => "°",
+            _ => "",
+        };
         let control = if self.number_edit == Some(index) {
             Input::new(&self.number_fields[index])
                 .disabled(locked)
                 .input_material()
+                .when(!unit.is_empty(), |input| {
+                    input.suffix(div().text_xs().child(unit))
+                })
                 .into_any_element()
         } else {
             div()
@@ -74,7 +83,7 @@ impl Editor {
                 .flex()
                 .items_center()
                 .justify_end()
-                .child(format!("{value:.3}"))
+                .child(format!("{value:.3}{unit}"))
                 .when(!locked, |d| {
                     d.cursor(CursorStyle::ResizeLeftRight)
                         .hover(|d| d.underline())
@@ -94,7 +103,12 @@ impl Editor {
             .justify_between()
             .gap_2()
             .child(div().text_xs().child(label.to_owned()))
-            .child(div().w(px(87.)).child(control))
+            .child(
+                div()
+                    .w(px(if unit.is_empty() { 87. } else { 104. }))
+                    .flex_shrink_0()
+                    .child(control),
+            )
             .into_any_element()
     }
 
@@ -120,7 +134,7 @@ impl Editor {
                 )
             })
             .children(
-                ["起点 / 秒", "显示时长 / 秒", "字号 / 1080p"]
+                ["起点", "显示时长", "字号（1080p）"]
                     .into_iter()
                     .enumerate()
                     .filter(|(index, _)| *index != 2 || text)
@@ -162,16 +176,10 @@ impl Editor {
             .flex_col()
             .gap_3()
             .children(
-                [
-                    "X 轴位置 / %",
-                    "Y 轴位置 / %",
-                    "缩放 / %",
-                    "旋转 / °",
-                    "不透明度 / %",
-                ]
-                .into_iter()
-                .enumerate()
-                .map(|(index, label)| self.property_number(index + 3, label, cx)),
+                ["X 轴位置", "Y 轴位置", "缩放", "旋转", "不透明度"]
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, label)| self.property_number(index + 3, label, cx)),
             )
             .into_any_element()
     }
