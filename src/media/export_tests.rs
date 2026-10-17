@@ -1,6 +1,110 @@
 use super::*;
 
 #[test]
+fn configured_render_preserves_project_and_encodes_each_format() {
+    use super::render_settings::{RenderFormat, RenderSettings, render_configured};
+    use crate::model::{Generator, VideoSettings};
+
+    let dir = tempfile::tempdir().unwrap();
+    let mut project = Project::default();
+    project
+        .add_generator(
+            Generator::Solid {
+                color: "336699".into(),
+            },
+            0.,
+            None,
+        )
+        .unwrap();
+    project
+        .tracks
+        .iter_mut()
+        .flat_map(|track| &mut track.clips)
+        .for_each(|clip| clip.source_out = 0.4);
+    let before = serde_json::to_string(&project).unwrap();
+    for format in RenderFormat::ALL {
+        let settings = RenderSettings {
+            video: VideoSettings::new(256, 144, "24000/1001".parse().unwrap()).unwrap(),
+            format,
+            quality: 1,
+        };
+        let path = dir
+            .path()
+            .join(format!("{format:?}.{}", format.extension()));
+        let (tx, _) = std::sync::mpsc::channel();
+        render_configured(
+            &project,
+            &path,
+            &settings,
+            Arc::new(AtomicBool::new(false)),
+            &tx,
+        )
+        .unwrap();
+        let metadata = probe(&path).unwrap();
+        assert_eq!((metadata.width, metadata.height), (256, 144));
+        assert!((metadata.frame_rate.unwrap().fps() - 24000. / 1001.).abs() < 0.001);
+        assert!(metadata.audio);
+        let output = command("ffprobe")
+            .args(["-v", "error", "-show_streams", "-of", "json"])
+            .arg(&path)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let data: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        let streams = data["streams"].as_array().unwrap();
+        let video = streams.iter().find(|s| s["codec_type"] == "video").unwrap();
+        let audio = streams.iter().find(|s| s["codec_type"] == "audio").unwrap();
+        assert_eq!(
+            video["codec_name"],
+            match format {
+                RenderFormat::Hevc => "hevc",
+                RenderFormat::WebM => "vp9",
+                _ => "h264",
+            }
+        );
+        assert_eq!(
+            audio["codec_name"],
+            if format == RenderFormat::WebM {
+                "opus"
+            } else {
+                "aac"
+            }
+        );
+        let decoded = command("ffmpeg")
+            .args(["-v", "error", "-xerror", "-i"])
+            .arg(path)
+            .args(["-f", "null", "-"])
+            .output()
+            .unwrap();
+        assert!(
+            decoded.status.success(),
+            "{}",
+            String::from_utf8_lossy(&decoded.stderr)
+        );
+    }
+    assert_eq!(serde_json::to_string(&project).unwrap(), before);
+    let path = dir.path().join("cancelled.webm");
+    std::fs::write(&path, b"existing output").unwrap();
+    let settings = RenderSettings {
+        video: project.settings().clone(),
+        format: RenderFormat::WebM,
+        quality: 1,
+    };
+    let (tx, _) = std::sync::mpsc::channel();
+    assert!(
+        render_configured(
+            &project,
+            &path,
+            &settings,
+            Arc::new(AtomicBool::new(true)),
+            &tx
+        )
+        .is_err()
+    );
+    assert_eq!(std::fs::read(path).unwrap(), b"existing output");
+}
+
+#[test]
 fn overlapping_events_export_blended_video_and_faded_audio() {
     let dir = tempfile::tempdir().unwrap();
     let mut project = Project::default();

@@ -356,44 +356,4 @@ impl Editor {
         })
         .detach();
     }
-
-    pub fn export(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.busy || self.job.is_some() {
-            return;
-        }
-        if self.project.duration() == 0. {
-            self.error = Some("时间线为空，无法导出".into());
-            cx.notify();
-            return;
-        }
-        self.close_color_editor(cx);
-        self.busy = true;
-        let name = format!("{}.mp4", self.project.name);
-        let (width, height) = self.project.settings().dimensions();
-        let title = format!(
-            "导出 {width}×{height} / {} FPS MP4",
-            self.project.settings().frame_rate()
-        );
-        cx.spawn_in(window, async move |this, cx| {
-            let file = rfd::AsyncFileDialog::new()
-                .set_title(title)
-                .set_file_name(name)
-                .add_filter("H.264 MP4", &["mp4"])
-                .save_file()
-                .await;
-            let _ = this.update_in(cx, |this, _, cx| {
-                this.busy = false;
-                if let Some(file) = file {
-                    let path = file.path().to_owned();
-                    if this.path.as_ref() == Some(&path) {
-                        this.error = Some("导出文件不能覆盖项目文件".into());
-                    } else {
-                        this.start_render(path, Job::Export, cx);
-                    }
-                }
-                cx.notify();
-            });
-        })
-        .detach();
-    }
 }

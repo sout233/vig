@@ -26,6 +26,7 @@ mod filmstrip;
 mod preview;
 mod project_properties;
 mod properties;
+mod render_window;
 mod selection;
 mod timeline_motion;
 mod tracks;
@@ -737,7 +738,12 @@ impl Editor {
         cx.notify();
     }
 
-    pub fn start_render(&mut self, path: PathBuf, job: Job, cx: &mut Context<Self>) {
+    pub fn start_render(
+        &mut self,
+        path: PathBuf,
+        settings: media::render_settings::RenderSettings,
+        cx: &mut Context<Self>,
+    ) {
         self.stop();
         self.preload_cancel.store(true, Ordering::Relaxed);
         self.cancel = Arc::new(AtomicBool::new(false));
@@ -745,12 +751,13 @@ impl Editor {
         let project = self.project.clone();
         let (tx, rx) = mpsc::channel();
         self.receiver = Some(rx);
-        self.job = Some(job);
+        self.job = Some(Job::Export);
         self.progress = 0.;
         self.error = None;
-        self.status = format!("正在导出：{}", path.display());
+        self.status = format!("正在渲染：{}", path.display());
         std::thread::spawn(move || {
-            let result = media::render(&project, &path, false, cancel, &tx);
+            let result =
+                media::render_settings::render_configured(&project, &path, &settings, cancel, &tx);
             let _ = tx.send(Event::Finished(result));
         });
         cx.notify();
@@ -810,7 +817,10 @@ impl Editor {
                     self.receiver = None;
                     match result {
                         Ok(()) => match job {
-                            Some(Job::Export) => self.status = "MP4 导出完成".into(),
+                            Some(Job::Export) => {
+                                self.progress = 1.;
+                                self.status = "渲染完成".into();
+                            }
                             Some(Job::Play) => {
                                 self.position = self.project.duration();
                                 self.status = "播放结束".into();

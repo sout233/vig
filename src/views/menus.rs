@@ -70,7 +70,7 @@ impl Editor {
                     ("保存项目", Command::Save, self.busy),
                     ("工程属性…", Command::ProjectProperties, locked),
                     (
-                        "导出 MP4…",
+                        "渲染…",
                         Command::Export,
                         self.busy || self.job.is_some() || self.project.duration() == 0.,
                     ),

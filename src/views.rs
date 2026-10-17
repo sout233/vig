@@ -560,7 +560,20 @@ impl Render for Editor {
                             .text_xs()
                             .text_color(rgb(if self.error.is_some() { ERROR } else { MUTED }))
                             .child(self.error.clone().unwrap_or_else(|| self.status.clone())),
-                    ),
+                    )
+                    .when(self.job == Some(Job::Export), |view| {
+                        view.child(
+                            Button::new("cancel-render-from-editor")
+                                .label("取消渲染")
+                                .button_material(false)
+                                .on_click(cx.listener(|this, _, _, cx| {
+                                    this.cancel
+                                        .store(true, std::sync::atomic::Ordering::Relaxed);
+                                    this.status = "正在取消渲染…".into();
+                                    cx.notify();
+                                })),
+                        )
+                    }),
             )
     }
 }

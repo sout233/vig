@@ -1,5 +1,6 @@
 use crate::model::{Media, Project};
 pub mod asr_audio;
+pub mod render_settings;
 pub mod waveform;
 use std::{
     io::{BufRead, BufReader, Read},
@@ -117,6 +118,7 @@ mod export_tests;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
 pub fn render(
     project: &Project,
     output: &Path,
@@ -305,6 +307,7 @@ fn filter_command(
     Ok(cmd)
 }
 
+#[cfg(test)]
 pub fn render_range(
     project: &Project,
     output: &Path,
@@ -332,36 +335,56 @@ fn render_range_at_size(
     cancel: Arc<AtomicBool>,
     tx: &Sender<Event>,
 ) -> Result<(), String> {
+    render_encoded(
+        project, output, preview, dimensions, start, end, None, cancel, tx,
+    )
+}
+
+fn render_encoded(
+    project: &Project,
+    output: &Path,
+    preview: bool,
+    dimensions: (u32, u32),
+    start: f64,
+    end: f64,
+    settings: Option<&render_settings::RenderSettings>,
+    cancel: Arc<AtomicBool>,
+    tx: &Sender<Event>,
+) -> Result<(), String> {
     if project.media.iter().any(|m| m.path == output) {
         return Err("导出路径不能覆盖源素材".into());
     }
     let duration = end - start;
     let mut cmd = filter_command(project, start, end, dimensions, None)?;
+    let suffix = format!(".{}", settings.map_or("mp4", |s| s.format.extension()));
     let temp = tempfile::Builder::new()
-        .suffix(".mp4")
+        .suffix(&suffix)
         .tempfile_in(output.parent().ok_or("导出目录无效")?)
         .map_err(|e| e.to_string())?;
-    cmd.args([
-        "-c:v",
-        "libx264",
-        "-preset",
-        if preview { "ultrafast" } else { "medium" },
-        "-crf",
-        if preview { "26" } else { "20" },
-        "-pix_fmt",
-        "yuv420p",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "192k",
-        "-movflags",
-        "+faststart",
-        "-progress",
-        "pipe:1",
-    ])
-    .arg(temp.path())
-    .stdout(Stdio::piped())
-    .stderr(Stdio::piped());
+    if let Some(settings) = settings {
+        settings.format.encode(&mut cmd, settings.quality);
+    } else {
+        cmd.args([
+            "-c:v",
+            "libx264",
+            "-preset",
+            if preview { "ultrafast" } else { "medium" },
+            "-crf",
+            if preview { "26" } else { "20" },
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            "-movflags",
+            "+faststart",
+        ]);
+    }
+    cmd.args(["-progress", "pipe:1"])
+        .arg(temp.path())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
     let mut child = cmd.spawn().map_err(|e| format!("无法运行 ffmpeg：{e}"))?;
     let stdout = child.stdout.take().unwrap();
     let stderr = child.stderr.take().unwrap();
