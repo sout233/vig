@@ -8,9 +8,10 @@ impl Editor {
         self.close_color_editor(cx);
         self.busy = true;
         let dirty = self.dirty;
+        let dialog = rfd::AsyncMessageDialog::new().set_parent(window);
         cx.spawn_in(window, async move |this, cx| {
             let proceed = !dirty
-                || rfd::AsyncMessageDialog::new()
+                || dialog
                     .set_title("新建项目")
                     .set_description("新建项目将丢弃当前未保存的更改，是否继续？")
                     .set_buttons(rfd::MessageButtons::YesNo)
@@ -81,11 +82,12 @@ impl Editor {
         self.busy = true;
         self.error = None;
         cx.notify();
+        let dialog = rfd::AsyncFileDialog::new().set_parent(window);
         cx.spawn_in(window, async move |this, cx| {
             let paths = if let Some(paths) = paths {
                 Some(paths)
             } else {
-                rfd::AsyncFileDialog::new()
+                dialog
                     .set_title("导入视频与音频")
                     .add_filter(
                         "视频 / 音频",
@@ -203,11 +205,12 @@ impl Editor {
         self.busy = true;
         let existing = self.path.clone();
         let mut project = self.project.clone();
+        let dialog = rfd::AsyncFileDialog::new().set_parent(window);
         cx.spawn_in(window, async move |this, cx| {
             let path = if let Some(path) = existing {
                 Some(path)
             } else {
-                rfd::AsyncFileDialog::new()
+                dialog
                     .set_title("保存项目")
                     .set_file_name("我的剪辑.vig")
                     .add_filter("Vig 项目", &["vig"])
@@ -265,9 +268,11 @@ impl Editor {
         self.busy = true;
         let dirty = self.dirty;
         self.stop();
+        let confirm = rfd::AsyncMessageDialog::new().set_parent(window);
+        let picker = rfd::AsyncFileDialog::new().set_parent(window);
         cx.spawn_in(window, async move |this, cx| {
             let proceed = !dirty
-                || rfd::AsyncMessageDialog::new()
+                || confirm
                     .set_title("尚有未保存的更改")
                     .set_description("打开其他项目将丢弃当前未保存的更改，是否继续？")
                     .set_buttons(rfd::MessageButtons::YesNo)
@@ -275,10 +280,7 @@ impl Editor {
                     .await
                     == rfd::MessageDialogResult::Yes;
             let file = if proceed {
-                rfd::AsyncFileDialog::new()
-                    .add_filter("Vig 项目", &["vig"])
-                    .pick_file()
-                    .await
+                picker.add_filter("Vig 项目", &["vig"]).pick_file().await
             } else {
                 None
             };

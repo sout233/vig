@@ -103,9 +103,10 @@ impl RenderWindow {
         self.error = None;
         let extension = settings.format.extension();
         let name = format!("{}.{}", owner.read(cx).project.name, extension);
+        let dialog = rfd::AsyncFileDialog::new().set_parent(window);
         cx.notify();
         cx.spawn_in(window, async move |this, cx| {
-            let file = rfd::AsyncFileDialog::new()
+            let file = dialog
                 .set_title("渲染到文件")
                 .set_file_name(name)
                 .add_filter(settings.format.label(), &[extension])
@@ -330,9 +331,10 @@ impl Editor {
             height.to_string(),
             self.project.settings().frame_rate().to_string(),
         ];
-        window.defer(cx, move |_, cx| {
+        window.defer(cx, move |parent, cx| {
             let error_owner = owner.clone();
-            let result = gpui_kit::open_window(
+            let result = crate::windowing::open_owned_window(
+                parent,
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
                         None,

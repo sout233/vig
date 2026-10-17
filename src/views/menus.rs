@@ -269,8 +269,9 @@ impl Editor {
                                                                 ("操作说明", "idk")
                                                             };
 
+                                                            let dialog = rfd::AsyncMessageDialog::new().set_parent(window);
                                                             cx.spawn(async move |_, _| {
-                                                                rfd::AsyncMessageDialog::new()
+                                                                dialog
                                                                     .set_title(title)
                                                                     .set_description(description)
                                                                     .show()

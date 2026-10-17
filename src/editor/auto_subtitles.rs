@@ -76,8 +76,9 @@ impl AutoSubtitles {
         self.loading = true;
         self.error = None;
         let mut preferences = self.preferences.clone();
+        let dialog = rfd::AsyncFileDialog::new().set_parent(window);
         cx.spawn_in(window, async move |this, cx| {
-            let folder = rfd::AsyncFileDialog::new()
+            let folder = dialog
                 .set_title(if aligner {
                     if preferences.selected == ModelSize::SenseVoice {
                         "选择 VAD 模型文件夹"

@@ -204,8 +204,9 @@ impl Editor {
                     return false;
                 }
                 this.close_pending = true;
+                let dialog = rfd::AsyncMessageDialog::new().set_parent(window);
                 cx.spawn_in(window, async move |this, cx| {
-                    let discard = rfd::AsyncMessageDialog::new()
+                    let discard = dialog
                         .set_title("关闭 Vig")
                         .set_description("当前项目有未保存的更改。是否丢弃更改并关闭？")
                         .set_buttons(rfd::MessageButtons::YesNo)

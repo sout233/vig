@@ -10,6 +10,7 @@ mod track_order;
 #[cfg(feature = "ui-verify")]
 mod verify;
 mod views;
+mod windowing;
 use gpui_kit::{component::TitleBar, *};
 
 fn main() {

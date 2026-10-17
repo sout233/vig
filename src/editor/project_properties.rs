@@ -293,6 +293,7 @@ impl Editor {
         self.busy = true;
         self.stop();
         cx.notify();
+        let dialog = rfd::AsyncMessageDialog::new().set_parent(window);
         cx.spawn_in(window, async move |this, cx| {
             let result = cx.background_spawn(async move {
                 let source = media::probe(&path)?;
@@ -303,7 +304,7 @@ impl Editor {
             match result {
                 Ok((name, settings)) => {
                     let (width, height) = settings.dimensions();
-                    let use_source = rfd::AsyncMessageDialog::new().set_title("同步属性")
+                    let use_source = dialog.set_title("同步属性")
                         .set_description(format!("是否将工程属性设置为视频“{name}”的属性？\n\n分辨率：{width}×{height}\n帧率：{} FPS\n\n选择“否”将保留当前工程属性", settings.frame_rate()))
                         .set_buttons(rfd::MessageButtons::YesNo).show().await == rfd::MessageDialogResult::Yes;
                     let _ = this.update_in(cx, |this, window, cx| {
