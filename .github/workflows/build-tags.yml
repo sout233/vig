@@ -87,3 +87,15 @@ jobs:
           path: dist/*
           if-no-files-found: error
           compression-level: 0
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/publish-release.yml
+    with:
+      tag: ${{ github.ref_name }}
+      run_id: ${{ github.run_id }}

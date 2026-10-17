@@ -12,7 +12,11 @@
 
 各架构使用原生 runner 编译，固定 Rust `nightly-2026-05-05`，使用仓库内的 Cargo.lock。每个任务独立上传压缩包和 SHA-256 校验文件到 Actions Artifacts；某个平台失败不会中断其他平台的构建。
 
-压缩包包含程序和 sherpa-onnx / ONNX Runtime 动态库，不包含模型权重及 FFmpeg。Linux 包修正同目录动态库的 RPATH；macOS 包修正动态库引用后进行 ad-hoc 签名，未进行 Apple 开发者签名或公证。该流程不自动创建 GitHub Release。
+tag 构建的五个平台全部成功后，会自动创建或更新对应 GitHub Release，上传五个压缩包和五个校验文件。包含 `-` 的 tag 标记为预发布版。发布前会核对 tag 与构建 commit、五个平台的成功状态、产物完整性及 SHA-256 校验值，失败时不执行发布。
+
+补发已有构建时，在 Actions 选择 `Publish built release` → `Run workflow`，选择最新 `main`，填写已有 tag 和成功构建的 run ID。该操作复用已有 Artifacts，无需重新编译；不会移动 tag。手动在分支上运行构建流程时仅保存 Artifacts。
+
+压缩包包含程序和 sherpa-onnx / ONNX Runtime 动态库，不包含模型权重及 FFmpeg。Linux 包修正同目录动态库的 RPATH；macOS 包修正动态库引用后进行 ad-hoc 签名，未进行 Apple 开发者签名或公证。
 
 运行前需将 `ffmpeg`、`ffprobe` 加入 PATH。Linux 需要图形桌面、Vulkan 驱动及相应系统库，Ubuntu 24.04 可安装 `libasound2t64 libfontconfig1 libxkbcommon-x11-0 libwayland-client0 libgtk-3-0t64 libwebkit2gtk-4.1-0 libvulkan1 fonts-noto-cjk`。macOS 最低版本为 15。
 
