@@ -464,19 +464,7 @@ impl Render for Editor {
                 } else if this.track_resize.is_some() {
                     this.resize_track(event.position.y, cx);
                 } else if this.number_drag.is_some() {
-                    #[cfg(not(windows))]
-                    {
-                        if event.pressed_button != Some(MouseButton::Left) {
-                            this.finish_number(window, cx);
-                            return;
-                        }
-                        this.number_drag
-                            .as_mut()
-                            .unwrap()
-                            .pointer
-                            .update_position(event.position.x / px(1.));
-                    }
-                    this.move_number(event.modifiers.shift, window, cx);
+                    this.move_number_from_event(event, window, cx);
                 } else {
                     this.move_timeline_pointer(event.position, cx);
                 }

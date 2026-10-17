@@ -228,6 +228,25 @@ impl Editor {
         cx.notify();
     }
 
+    pub fn move_number_from_event(
+        &mut self,
+        event: &MouseMoveEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        #[cfg(not(windows))]
+        {
+            if event.pressed_button != Some(MouseButton::Left) {
+                self.finish_number(window, cx);
+                return;
+            }
+            if let Some(drag) = &mut self.number_drag {
+                drag.pointer.update_position(event.position.x / px(1.));
+            }
+        }
+        self.move_number(event.modifiers.shift, window, cx);
+    }
+
     pub fn move_number(&mut self, fine: bool, window: &mut Window, cx: &mut Context<Self>) {
         let Some(drag) = &mut self.number_drag else {
             return;
