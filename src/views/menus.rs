@@ -9,6 +9,7 @@ enum Command {
     Save,
     Export,
     ProjectProperties,
+    #[cfg(feature = "asr")]
     AutoSubtitles,
     Undo,
     Redo,
@@ -153,6 +154,7 @@ impl Editor {
                     ("缩小时间线", Command::ZoomOut, false),
                 ],
             ),
+            #[cfg(feature = "asr")]
             (
                 "tools-menu",
                 "工具",
@@ -211,6 +213,7 @@ impl Editor {
                                                         Command::ProjectProperties => {
                                                             this.project_properties(window, cx)
                                                         }
+                                                        #[cfg(feature = "asr")]
                                                         Command::AutoSubtitles => {
                                                             this.auto_subtitles(window, cx)
                                                         }
@@ -264,9 +267,10 @@ impl Editor {
                                                         Command::ZoomOut => this.zoom_timeline(1. / 1.5, cx),
                                                         Command::Help | Command::About => {
                                                             let (title, description) = if matches!(command, Command::About) {
-                                                                ("关于 Vig", "Vig 0.1.0\nPowered By GPUI-Kit")
+                                                                let edition = if cfg!(feature = "asr") { "完整版（含自动字幕）" } else { "精简版（不含自动字幕）" };
+                                                                ("关于 Vig", format!("Vig 0.1.0 · {edition}\nPowered By GPUI-Kit\n\nBoxicons · MIT License\n{}", include_str!("../../assets/icons/LICENSE")))
                                                             } else {
-                                                                ("操作说明", "idk")
+                                                                ("操作说明", "idk".to_owned())
                                                             };
 
                                                             let dialog = rfd::AsyncMessageDialog::new().set_parent(window);

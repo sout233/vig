@@ -19,6 +19,7 @@ use std::{
     },
     time::Duration,
 };
+#[cfg(feature = "asr")]
 mod auto_subtitles;
 mod clipboard;
 mod files;
@@ -100,6 +101,7 @@ pub struct TrackResize {
 }
 
 pub struct Editor {
+    #[cfg(feature = "asr")]
     pub(crate) asr_engine: Arc<crate::asr::AsrEngine>,
     pub project: Project,
     pub selected: Option<u64>,
@@ -333,6 +335,7 @@ impl Editor {
             Default::default(),
         ));
         Self {
+            #[cfg(feature = "asr")]
             asr_engine: Arc::new(crate::asr::AsrEngine::default()),
             project: Project::default(),
             selected: None,

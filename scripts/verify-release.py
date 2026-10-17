@@ -17,6 +17,7 @@ TARGETS = (
     "x86_64-apple-darwin",
     "aarch64-apple-darwin",
 )
+VARIANTS = tuple((target, flavor) for target in TARGETS for flavor in ("lite", "full"))
 
 
 def metadata() -> None:
@@ -49,24 +50,24 @@ def metadata() -> None:
     if run["head_sha"] != reference["sha"]:
         raise ValueError("Build commit differs from release tag")
     jobs = get(f"actions/runs/{run_id}/jobs?per_page=100")["jobs"]
-    for target in TARGETS:
-        matches = [job for job in jobs if job["name"] == f"Build {target}"]
+    for target, flavor in VARIANTS:
+        matches = [job for job in jobs if job["name"] == f"Build {target} ({flavor})"]
         if len(matches) != 1 or matches[0]["conclusion"] != "success":
-            raise ValueError(f"Build has not succeeded: {target}")
+            raise ValueError(f"Build has not succeeded: {target} ({flavor})")
     artifacts = get(f"actions/runs/{run_id}/artifacts?per_page=100")["artifacts"]
-    for target in TARGETS:
-        matches = [artifact for artifact in artifacts if artifact["name"] == f"vig-{target}"]
+    for target, flavor in VARIANTS:
+        matches = [artifact for artifact in artifacts if artifact["name"] == f"vig-{flavor}-{target}"]
         if len(matches) != 1 or matches[0]["expired"]:
-            raise ValueError(f"Required build artifact is absent or expired: {target}")
-    print(f"Verified five successful builds of {reference['sha']} for {tag}")
+            raise ValueError(f"Required build artifact is absent or expired: {target} ({flavor})")
+    print(f"Verified ten successful builds of {reference['sha']} for {tag}")
 
 
 def files(directory: Path, tag: str) -> None:
     safe_tag = re.sub(r"[^A-Za-z0-9._-]", "-", tag)
     expected = set()
-    for target in TARGETS:
-        extension = "zip" if target.endswith("windows-msvc") else "tar.gz"
-        name = f"vig-{safe_tag}-{target}.{extension}"
+    for target, flavor in VARIANTS:
+        extension = ("exe" if flavor == "lite" else "zip") if target.endswith("windows-msvc") else "tar.gz"
+        name = f"vig-{safe_tag}-{flavor}-{target}.{extension}"
         checksum_name = name + ".sha256"
         expected.update((name, checksum_name))
         digest, recorded_name = (directory / checksum_name).read_text(encoding="utf-8").split()
@@ -77,8 +78,8 @@ def files(directory: Path, tag: str) -> None:
         if actual != digest:
             raise ValueError(f"SHA-256 mismatch: {name}")
     if {path.name for path in directory.iterdir()} != expected:
-        raise ValueError("Release must contain exactly five packages and five checksum files")
-    print("Verified five release packages and five SHA-256 checksums")
+        raise ValueError("Release must contain exactly ten packages and ten checksum files")
+    print("Verified ten release packages and ten SHA-256 checksums")
 
 
 if __name__ == "__main__":

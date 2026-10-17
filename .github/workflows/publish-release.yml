@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       run_id:
-        description: Run ID containing all five successful builds
+        description: Run ID containing all ten successful full/lite builds
         required: true
         type: string
 
@@ -61,6 +61,7 @@ jobs:
           prerelease: ${{ contains(inputs.tag, '-') }}
           fail_on_unmatched_files: true
           files: |
+            dist/*.exe
             dist/*.zip
             dist/*.tar.gz
             dist/*.sha256

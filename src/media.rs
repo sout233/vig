@@ -1,4 +1,5 @@
 use crate::model::{Media, Project};
+#[cfg(feature = "asr")]
 pub mod asr_audio;
 pub mod render_settings;
 pub mod waveform;

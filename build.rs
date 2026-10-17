@@ -1,3 +1,7 @@
+#[cfg(not(feature = "asr"))]
+fn main() {}
+
+#[cfg(feature = "asr")]
 fn main() {
     println!("cargo:rerun-if-changed=src/asr/native.cpp");
     let mut build = cc::Build::new();

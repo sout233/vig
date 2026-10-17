@@ -16,12 +16,13 @@ env:
 
 jobs:
   build:
-    name: Build ${{ matrix.target }}
-    runs-on: ${{ matrix.runner }}
+    name: Build ${{ matrix.platform.target }} (${{ matrix.flavor }})
+    runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
       matrix:
-        include:
+        flavor: [lite, full]
+        platform:
           - runner: windows-2022
             target: x86_64-pc-windows-msvc
           - runner: ubuntu-24.04
@@ -32,6 +33,8 @@ jobs:
             target: x86_64-apple-darwin
           - runner: macos-15
             target: aarch64-apple-darwin
+    env:
+      RUSTFLAGS: ${{ matrix.flavor == 'lite' && contains(matrix.platform.target, 'windows') && '-C target-feature=+crt-static' || '' }}
     defaults:
       run:
         shell: bash
@@ -62,28 +65,37 @@ jobs:
       - name: Install Rust
         run: |
           rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
-          rustup target add --toolchain "$RUST_TOOLCHAIN" '${{ matrix.target }}'
+          rustup target add --toolchain "$RUST_TOOLCHAIN" '${{ matrix.platform.target }}'
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
         with:
-          key: ${{ env.RUST_TOOLCHAIN }}-${{ matrix.target }}
+          key: ${{ env.RUST_TOOLCHAIN }}-${{ matrix.platform.target }}-${{ matrix.flavor }}
           cache-on-failure: true
 
       - name: Compile release
         env:
           MACOSX_DEPLOYMENT_TARGET: '15.0'
-        run: cargo +"$RUST_TOOLCHAIN" build --locked --release --target '${{ matrix.target }}'
+          BUILD_FLAVOR: ${{ matrix.flavor }}
+        run: |
+          args=()
+          if [[ "$BUILD_FLAVOR" == lite ]]; then
+            args+=(--no-default-features)
+          fi
+          cargo +"$RUST_TOOLCHAIN" build --locked --release --target '${{ matrix.platform.target }}' "${args[@]}"
+
+      - name: Test edition packaging
+        run: python -m unittest discover -s scripts -p test_release.py
 
       - name: Package executable and native libraries
         env:
           RELEASE_TAG: ${{ github.ref_name }}
-        run: python scripts/package-release.py '${{ matrix.target }}'
+        run: python scripts/package-release.py '${{ matrix.platform.target }}' '${{ matrix.flavor }}'
 
       - name: Upload build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: vig-${{ matrix.target }}
+          name: vig-${{ matrix.flavor }}-${{ matrix.platform.target }}
           path: dist/*
           if-no-files-found: error
           compression-level: 0

@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+#[cfg(feature = "asr")]
 pub fn data_directory() -> Result<PathBuf, String> {
     dirs::data_local_dir()
         .map(|directory| directory.join("Vig"))
